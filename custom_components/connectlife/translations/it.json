@@ -230,7 +230,8 @@
                     "fan_mode": {
                         "state": {
                             "middle_low": "Medio bassa",
-                            "middle_high": "Medio alta"
+                            "middle_high": "Medio alta",
+                            "quiet": "Silenzioso"
                         }
                     },
                     "preset_mode": {

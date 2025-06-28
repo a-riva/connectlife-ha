@@ -154,9 +154,7 @@ properties:
       device_class: switch
     icon: mdi:leaf
   - property: t_fan_mute
-    switch:
-      device_class: switch
-    icon: mdi:volume-variant-off
+    disable: true
   - property: t_fan_speed
     climate:
       target: fan_mode
@@ -167,6 +165,7 @@ properties:
         7: medium
         8: middle_high
         9: high
+        255: quiet
   - property: t_fan_speed_s
     disable: true
   - property: t_power

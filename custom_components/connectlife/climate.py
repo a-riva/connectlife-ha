@@ -117,6 +117,9 @@ class ConnectLifeClimate(ConnectLifeEntity, ClimateEntity):
         self.min_temperature_map = {}
         self.max_temperature_map = {}
         self.unknown_values = {}
+        
+        # Track if this is an air conditioner with fan mute functionality
+        self.is_ac_with_fan_mute = appliance.device_type_code == "009" and "t_fan_mute" in appliance.status_list
 
         for dd_entry in data_dictionary.properties.values():
             if hasattr(dd_entry, Platform.CLIMATE) and dd_entry.name in appliance.status_list:
@@ -225,6 +228,11 @@ class ConnectLifeClimate(ConnectLifeEntity, ClimateEntity):
                 elif target == FAN_MODE:
                     if value in self.fan_mode_map:
                         self._attr_fan_mode = self.fan_mode_map[value]
+                        # For AC with fan mute, check if mute is active and override to quiet
+                        if (self.is_ac_with_fan_mute and 
+                            "t_fan_mute" in self.coordinator.data[self.device_id].status_list and
+                            self.coordinator.data[self.device_id].status_list["t_fan_mute"] == 1):
+                            self._attr_fan_mode = "quiet"
                     else:
                         self._attr_fan_mode = None
                         _LOGGER.warning("Got unexpected value %d for %s (%s)", value, status, self.nickname)
@@ -307,9 +315,19 @@ class ConnectLifeClimate(ConnectLifeEntity, ClimateEntity):
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set the fan mode."""
-        await self.async_update_device({
-            self.target_map[FAN_MODE]: self.fan_mode_reverse_map[fan_mode]
-        })
+        request = {}
+        
+        if self.is_ac_with_fan_mute and fan_mode == "quiet":
+            # Set fan mute on and use low speed as base (value 5)
+            request[self.target_map[FAN_MODE]] = 5  # low speed
+            request["t_fan_mute"] = 1
+        else:
+            # Normal fan mode, ensure mute is off for AC with fan mute
+            request[self.target_map[FAN_MODE]] = self.fan_mode_reverse_map[fan_mode]
+            if self.is_ac_with_fan_mute:
+                request["t_fan_mute"] = 0
+        
+        await self.async_update_device(request)
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         """Set the preset mode."""

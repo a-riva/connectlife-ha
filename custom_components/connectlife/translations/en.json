@@ -872,7 +872,8 @@
           "fan_mode": {
             "state": {
               "middle_low": "Middle low",
-              "middle_high": "Middle high"
+              "middle_high": "Middle high",
+              "quiet": "Quiet"
             }
           },
           "preset_mode": {
